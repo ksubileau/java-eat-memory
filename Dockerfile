@@ -10,17 +10,13 @@ RUN java -version
 
 COPY . /usr/src/myapp/
 WORKDIR /usr/src/myapp/
-RUN set -Eeux \
-    && apk --no-cache add maven \
-    # smoke test to verify if maven is available
-    && mvn --version
-RUN mvn package
+RUN javac JavaEatMemory.java
 
 # Stage 2 (to create a downsized "container executable", ~180MB)
 FROM eclipse-temurin:17-jre-alpine
+ENV JAVA_OPTS=""
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
-COPY --from=builder /usr/src/myapp/target/app.jar .
+COPY --from=builder /usr/src/myapp/JavaEatMemory.class .
 
-EXPOSE 8123
-ENTRYPOINT ["java", "-jar", "./app.jar"]
+ENTRYPOINT sh -c "java $JAVA_OPTS JavaEatMemory"
